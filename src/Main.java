@@ -10,7 +10,9 @@ import java.util.stream.Stream;
 
 
 public class Main {
+    static boolean hadError = false;
     public static void main(String[] args) throws IOException {
+        // Checking the run-options
         if(args.length > 1){
             System.out.println("Usage: jlox [script]");
             System.exit(64);
@@ -20,7 +22,7 @@ public class Main {
             runPrompt();
         }
     }
-
+    // Waiting for user-input to run
     private static void runPrompt() throws IOException {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
@@ -30,17 +32,31 @@ public class Main {
             String line = reader.readLine();
             if (line == null) break;
             run(line);
+            hadError = false;
         }
     }
-
+    // Running a file in the given path
     private static void runFile(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         run(new String(bytes, Charset.defaultCharset()));
+
+        if(hadError) System.exit(65);
     }
     private static void run(String source){
-        Scanner scanner = new Scanner(source);
-        List<Token> tokens = scanner.tokens();
+        MyScanner scanner = new MyScanner(source);
+        List<Token> tokens = scanner.scanTokens();
 
+        for (Token token: tokens) {
+            System.out.println(token);
+        }
+    }
+    static void error(int line, String message){
+        report(line, "", message);
+    }
 
+    private static void report(int line, String where, String message) {
+
+        System.err.println("[line" + line + "] Error" + where + ":" + message);
+        hadError = true;
     }
 }
