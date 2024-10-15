@@ -56,11 +56,72 @@ public class MyScanner {
             break;
             case '>': addToken(match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
             break;
-            default: Main.error(line,"Unexpected character.");
+            case '/': if(match('/')){
+                while (peek() != '\n' && !isAtEnd()){
+                    advance();
+                }
+            }else {
+                addToken(TokenType.SLASH);
+            }
+            break;
+            case ' ':
+            case '\r':
+            case '\t':
+            break;
+            case '\n':
+            line++;
+            break;
+            case '"': string();
+            break;
+            default:
+                if(isDigit(c)){
+                    number();
+                }
+                else{
+                    Main.error(line,"Unexpected character.");
+                }
             break;
 
 
         }
+    }
+
+    private void number() {
+        while (isDigit(peek()) || (peek() == '.' && isDigit(peekNext()))){
+            advance();
+        }
+        double value = Double.parseDouble(source.substring(start, current));
+        addToken(TokenType.NUMBER, value);
+    }
+
+    private boolean isDigit(char c){
+        return c >= '0' && c <= '9';
+    }
+
+    private void string() {
+        while (peek() != '"' && !isAtEnd()){
+            if(peek() == '\n') line++;
+            advance();
+        }
+
+        if(isAtEnd()){
+            Main.error(line, "Unterminated string.");
+            return;
+        }
+
+        advance();
+        String value = source.substring(start + 1, current - 1);
+        addToken(TokenType.STRING, value);
+
+    }
+
+    private char peek() {
+        if(isAtEnd()) return '\0';
+        return source.charAt(current);
+    }
+    private char peekNext(){
+        if(current + 1 >= source.length()) return '\0';
+        return source.charAt(current+1);
     }
 
     private boolean match(char expected) {
