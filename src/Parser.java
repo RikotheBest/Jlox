@@ -1,4 +1,6 @@
 import java.util.List;
+import java.util.function.Supplier;
+
 public class Parser {
     private final List<Token> tokens;
     private int current = 0;
@@ -10,29 +12,64 @@ public class Parser {
         return equality();
     }
 
-    private Expr equality() {
-        Expr expr = comparison();
-        while (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)){
+    private Expr parseBinaryOp(Supplier<Expr> supplier, TokenType... types){
+        Expr expr = supplier.get();
+        while(match(types)){
             Token operator = previous();
-            Expr right = comparison();
-            expr = new Expr.Binary(expr, operator,right);
+            Expr right = supplier.get();
+            expr = new Expr.Binary(expr, operator, right);
         }
         return expr;
+    }
+
+    private Expr equality() {
+       return parseBinaryOp(this::comparison, TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL);
     }
 
     private Expr comparison() {
-        Expr expr = term();
-        while(match(TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS_EQUAL, TokenType.LESS)){
-            Token operand = previous();
-            Expr right = term();
-            expr = new Expr.Binary(expr, operand, right);
-        }
-        return expr;
+        return parseBinaryOp(this::term, TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS_EQUAL, TokenType.LESS);
     }
 
     private Expr term() {
+        return parseBinaryOp(this::factor, TokenType.MINUS, TokenType.PLUS);
+    }
 
-        return null;
+    private Expr factor() {
+        return parseBinaryOp(this::unary, TokenType.SLASH,TokenType.STAR);
+    }
+
+    private Expr unary() {
+        if(match(TokenType.BANG, TokenType.MINUS)){
+            Token operator = previous();
+            Expr right = unary();
+            return new Expr.Unary(operator,right);
+        }
+        return primary();
+    }
+
+    private Expr primary() {
+        if(match(TokenType.FALSE)) return new Expr.Literal(false);
+        if(match(TokenType.TRUE)) return new Expr.Literal(true;
+        if(match(TokenType.NIL)) return new Expr.Literal(null);
+
+        if(match(TokenType.NUMBER, TokenType.STRING)){
+            return new Expr.Literal(previous().literal);
+        }
+
+        if(match(TokenType.LEFT_PAREN)){
+            Expr expr = expression();
+            consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
+            return new Expr.Grouping(expr);
+        }
+    }
+
+    private Token consume(TokenType type, String message) throws ParseError {
+        if(check(type)) return advance();
+        throw error(peek(), message);
+    }
+    private ParseError error(Token token, String message){
+        Main.error(token, message);
+        return new ParseError();
     }
 
     private boolean match(TokenType... types){
