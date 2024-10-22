@@ -1,18 +1,27 @@
 import java.util.List;
 import java.util.function.Supplier;
 
+
 public class Parser {
+    public class ParseError extends RuntimeException{}
     private final List<Token> tokens;
     private int current = 0;
 
     public Parser(List<Token> tokens) {
         this.tokens = tokens;
     }
+    Expr parse(){
+        try {
+            return expression();
+        } catch (ParseError error) {
+            return null;
+        }
+    }
     private Expr expression(){
         return equality();
     }
 
-    private Expr parseBinaryOp(Supplier<Expr> supplier, TokenType... types){
+    private Expr parseBinaryOp (Supplier<Expr> supplier, TokenType... types) {
         Expr expr = supplier.get();
         while(match(types)){
             Token operator = previous();
@@ -49,7 +58,7 @@ public class Parser {
 
     private Expr primary() {
         if(match(TokenType.FALSE)) return new Expr.Literal(false);
-        if(match(TokenType.TRUE)) return new Expr.Literal(true;
+        if(match(TokenType.TRUE)) return new Expr.Literal(true);
         if(match(TokenType.NIL)) return new Expr.Literal(null);
 
         if(match(TokenType.NUMBER, TokenType.STRING)){
@@ -61,6 +70,7 @@ public class Parser {
             consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
         }
+        throw error(peek(), "Expect expression");
     }
 
     private Token consume(TokenType type, String message) throws ParseError {
@@ -70,6 +80,25 @@ public class Parser {
     private ParseError error(Token token, String message){
         Main.error(token, message);
         return new ParseError();
+    }
+    private void synchronize(){
+        advance();
+        while(!isAtEnd()){
+            if(previous().type == TokenType.SEMICOLON) return;
+
+            switch (peek().type){
+                case CLASS:
+                case FUN:
+                case VAR:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                case RETURN:
+                    return;
+            }
+            advance();
+        }
     }
 
     private boolean match(TokenType... types){
@@ -107,13 +136,3 @@ public class Parser {
 
 
 
-
-/*
-expression → equality ;
-equality → comparison ( ( "!=" | "==" ) comparison )* ;
-comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-term → factor ( ( "-" | "+" ) factor )* ;
-factor → unary ( ( "/" | "*" ) unary )* ;
-unary → ( "!" | "-" ) unary | primary ;
-primary → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
- */
