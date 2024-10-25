@@ -12,7 +12,9 @@ import java.util.stream.Stream;
 
 
 public class Main {
+    private static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
     public static void main(String[] args) throws IOException {
         // Checking the run-options
         if(args.length > 1){
@@ -43,6 +45,7 @@ public class Main {
         run(new String(bytes, Charset.defaultCharset()));
 
         if(hadError) System.exit(65);
+        if(hadRuntimeError) System.exit(70);
     }
     private static void run(String source){
         MyScanner scanner = new MyScanner(source);
@@ -51,6 +54,8 @@ public class Main {
         Expr expression = parser.parse();
 
         if(hadError) return;
+
+        interpreter.interpret(expression);
 
 
     }
@@ -69,5 +74,9 @@ public class Main {
         }else {
             report(token.line, " at '" + token.lexeme + "'", message);
         }
+    }
+    static void runtimeError(RuntimeError error){
+        System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+        hadRuntimeError = true;
     }
 }
