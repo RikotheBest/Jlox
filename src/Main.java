@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLOutput;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Stream;
 
@@ -51,12 +52,10 @@ public class Main {
         MyScanner scanner = new MyScanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
+        List<Stmt> statements = parser.parse();
 
         if(hadError) return;
-
-        interpreter.interpret(expression);
-
+        interpreter.interpret(statements);
 
     }
     static void error(int line, String message){
