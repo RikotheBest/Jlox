@@ -12,6 +12,13 @@ public class Environment {
         }
         throw new RuntimeError("Undefined variable '" + name.lexeme + "'.", name);
     }
+    void assign(Token name, Object value){
+        if(values.containsKey(name.lexeme)){
+            values.put(name.lexeme,value);
+            return;
+        }
+        throw new RuntimeError("Undefined variable '" + name.lexeme + "'.", name);
+    }
 
 
 }
