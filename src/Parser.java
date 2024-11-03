@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.Arrays;
 
 
 public class Parser {
@@ -42,13 +43,28 @@ public class Parser {
 
     private Stmt statement() {
         if(match(TokenType.PRINT)) return printStatement();
+        if(match(TokenType.WHILE)) return whileStatement();
+        if(match(TokenType.FOR)) return forStatement();
         if(match(TokenType.IF)) return ifStatement();
         if(match(TokenType.LEFT_BRACE)) return new Stmt.Block(block());
         return expressionStatement();
     }
 
+    private Stmt forStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+        
+    }
+
+    private Stmt whileStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect a '(' after while");
+        Expr expr = expression();
+        consume(TokenType.LEFT_PAREN, "Expect a ')' after a while condition");
+        Stmt body = statement();
+        return new Stmt.While(expr, body);
+    }
+
     private Stmt ifStatement(){
-        consume(TokenType.LEFT_PAREN, "Expect a '(' if");
+        consume(TokenType.LEFT_PAREN, "Expect a '(' after if");
         Expr expr = expression();
         consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
 
@@ -86,7 +102,7 @@ public class Parser {
     }
 
     private Expr assignment() {
-        Expr expr = equality();
+        Expr expr = or();
 
         if(match(TokenType.EQUAL)){
             Token equals = previous();
@@ -99,6 +115,12 @@ public class Parser {
             error(equals, "Invalid assignment target");
         }
         return expr;
+    }
+    private Expr or(){
+        return parseBinaryOp(this::and, TokenType.OR);
+    }
+    private Expr and(){
+        return parseBinaryOp(this::equality, TokenType.AND);
     }
 
     private Expr parseBinaryOp (Supplier<Expr> supplier, TokenType... types) {
