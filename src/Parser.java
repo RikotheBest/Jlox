@@ -70,13 +70,28 @@ public class Parser {
         if(!check(TokenType.RIGHT_PAREN)){
             increment = expression();
         }
-        consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after 'for' clauses.");
+        Stmt body = statement();
+
+        if(increment != null){
+            body = new Stmt.Block(Arrays.asList(body, new Stmt.Expression(increment)));
+        }
+        if(condition == null){
+            condition = new Expr.Literal(true);
+        }
+        body = new Stmt.While(condition, body);
+        if(initializer != null){
+            body = new Stmt.Block(Arrays.asList(initializer, body));
+        }
+        return body;
+
+
     }
 
     private Stmt whileStatement() {
         consume(TokenType.LEFT_PAREN, "Expect a '(' after while");
         Expr expr = expression();
-        consume(TokenType.LEFT_PAREN, "Expect a ')' after a while condition");
+        consume(TokenType.RIGHT_PAREN, "Expect a ')' after a while condition");
         Stmt body = statement();
         return new Stmt.While(expr, body);
     }
