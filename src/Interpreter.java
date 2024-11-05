@@ -3,7 +3,22 @@ import java.util.ArrayList;
 
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
-    private Environment environment = new Environment();
+    final Environment globals = new Environment();
+    private Environment environment = globals;
+    Interpreter(){
+        globals.define("clock", new LoxCallable() {
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return (double)System.currentTimeMillis() / 1000.0;
+            }
+
+            @Override
+            public int arity() {
+                return 0;
+            }
+        });
+    }
+
     public void interpret(List<Stmt> statements){
         try {
             for (Stmt statement : statements){
@@ -140,7 +155,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
-    private Void executeBlock(List<Stmt> statements, Environment environment) {
+    public Void executeBlock(List<Stmt> statements, Environment environment) {
         Environment previous = this.environment;
         try {
             this.environment = environment;
@@ -170,6 +185,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         while(isTruthy(evaluate(stmt.condition))){
             execute(stmt.body);
         }
+        return null;
+    }
+
+    @Override
+    public Void visitFunctionStmt(Stmt.Function stmt) {
+        LoxFunction function = new LoxFunction(stmt);
+        environment.define(stmt.name.lexeme, function);
         return null;
     }
 
