@@ -66,7 +66,18 @@ public class Parser {
         if(match(TokenType.FOR)) return forStatement();
         if(match(TokenType.IF)) return ifStatement();
         if(match(TokenType.LEFT_BRACE)) return new Stmt.Block(block());
+        if(match(TokenType.RETURN)) return returnStatement();
         return expressionStatement();
+    }
+
+    private Stmt returnStatement() {
+        Token returnStmt = previous();
+        Expr expr = null;
+        if(!check(TokenType.SEMICOLON)){
+            expr = expression();
+        }
+        consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+        return new Stmt.Return(returnStmt, expr);
     }
 
     private Stmt forStatement() {
