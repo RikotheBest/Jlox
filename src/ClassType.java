@@ -1,4 +1,5 @@
 public enum ClassType {
     NONE,
-    CLASS
+    CLASS,
+    SUBCLASS
 }
